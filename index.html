@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Nomcebo's Weekly Weather</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #1F1F1F;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    h1 {
+      color: #00ADB5;
+    }
+
+    #weather, #forecast {
+      margin-top: 20px;
+      background: #393E46;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.4);
+    }
+
+    #forecast-day {
+      margin-top: 10px;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #00ADB5;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #008C9E;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🌦️ Nomcebo's Weather Report</h1>
+  <div id="weather">Getting current weather...</div>
+
+  <button onclick="getWeeklyForecast()">Show 7-Day Forecast</button>
+  <div id="forecast" style="display:none;"></div>
+
+  <script>
+    const apiKey = "6d079e6b6fba5ed8877383c08f4ee403"; // Replace wth your OpenWeatherMap API key (One Call 3.0)
+
+    let lat, lon;
+
+    // Get user location and today's weather
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(function(position) {
+        lat = position.coords.latitude;
+        lon = position.coords.longitude;
+
+        fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`)
+          .then(response => response.json())
+          .then(data => {
+            const city = data.name;
+            const temp = data.main.temp;
+            const description = data.weather[0].description;
+            document.getElementById("weather").innerHTML =
+              `🌍 Weather in <strong>${city}</strong>: ${temp}°C, ${description}`;
+          })
+          .catch(() => {
+            document.getElementById("weather").innerHTML = "❌ Could not load current weather.";
+          });
+      });
+    }
+
+    // Function to fetch and display 7-day forecast
+    function getWeeklyForecast() {
+      if (!lat || !lon) {
+        alert("Please wait, location still loading...");
+        return;
+      }
+
+      fetch(`https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly,alerts,current&units=metric&appid=${apiKey}`)
+        .then(response => response.json())
+        .then(data => {
+          const forecastData = data.daily.slice(0, 7); // Only 7 days
+          let forecastHTML = `<h2>🗓️ 7-Day Forecast</h2>`;
+
+          forecastData.forEach((day, index) => {
+            const date = new Date(day.dt * 1000).toDateString();
+            const temp = day.temp.day;
+            const desc = day.weather[0].description;
+
+            forecastHTML += `
+              <div id="forecast-day">
+                <strong>${date}</strong>: ${temp}°C, ${desc}
+              </div>`;
+          });
+
+          document.getElementById("forecast").innerHTML = forecastHTML;
+          document.getElementById("forecast").style.display = "block";
+        })
+        .catch(() => {
+          document.getElementById("forecast").innerHTML = "❌ Could not load forecast.";
+          document.getElementById("forecast").style.display = "block";
+        });
+    }
+  </script>
+</body>
+</html>
+
